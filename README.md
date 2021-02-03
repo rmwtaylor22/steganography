@@ -1,4 +1,4 @@
+# Work Repository for Rose White
 
-Work Repository for rwhite
-
-(students may remove or change this file as desired)
+- Email: rose_white@taylor.edu
+- CSE username: rwhite
