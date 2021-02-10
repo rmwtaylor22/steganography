@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+
+{% block title %}List of Letters{% endblock %}
+
+{% block content %}
+
+<p>Here are some letters:</p>
+<ul>
+{% for comment in comments %}
+    <li><strong>{{ comment }}</strong></li>
+{% endfor %}
+</ul>
+{% endblock %}
