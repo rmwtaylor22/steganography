@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Sessions Example</title>
+</head>
+<body>
+
+<h1>Sessions Example Site</h1>
+
+{% if session.user %}
+<p>Logged in as {{ session.user.name }}</p>
+{% endif %}
+
+
+{%  block content %}
+
+{% endblock %}
+
+
+</body>
+</html>
