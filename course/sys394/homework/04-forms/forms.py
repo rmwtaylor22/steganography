@@ -21,7 +21,7 @@ class LoginForm(FlaskForm):
     lastName = StringField('Last Name', validators=long)
     email = StringField('Email', validators=[Email()])
     password = PasswordField('Password', validators=valid_pword)
-    passwordCheck = PasswordField('Password confirmation', validators=[EqualTo(password)])
+    passwordCheck = PasswordField('Password confirmation', validators=[EqualTo('password')])
 
     submit = SubmitField('Register')
 
