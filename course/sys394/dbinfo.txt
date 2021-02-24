@@ -1,0 +1,4 @@
+Host: roller.cse.taylor.edu 
+ Database: rwhite 
+ User: rwhite 
+ Password: rwhite
