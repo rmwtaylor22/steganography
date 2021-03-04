@@ -3,7 +3,7 @@ import psycopg2
 import psycopg2.extras
 
 
-data_source_name = "dbname=rwhite user=rwhite host=roller.cse.taylor.edu"
+data_source_name = "dbname=rwhite user=rwhite password=rwhite host=roller.cse.taylor.edu"
 
 
 def open_db_connection():

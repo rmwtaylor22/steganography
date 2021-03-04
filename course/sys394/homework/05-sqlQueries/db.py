@@ -1,31 +1,27 @@
+from flask import g
 import psycopg2
 import psycopg2.extras
-from flask import Flask, render_template, g, flash, redirect, url_for
-
-import db # if error, right-click parent directory "mark directory as" "sources root"
 
 
-app = Flask(__name__)
+data_source_name = "dbname=rwhite user=rwhite password=rwhite host=roller.cse.taylor.edu"
 
 
-@app.route('/')
-def index():
-    return render_template('index.html')
+def open_db_connection():
+    g.connection = psycopg2.connect(data_source_name)
+    g.cursor = g.connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
 
-@app.route('/trips')
+def close_db_connection():
+    g.cursor.close()
+    g.connection.close()
+
+
 def trip_report():
-    data_source_name = "dbname=rwhite user=rwhite password=rwhite host=roller.cse.taylor.edu"
-
-    db.trip_report
-    connection = psycopg2.connect(data_source_name)
-    cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
-
-    cursor.execute('SELECT * FROM trips')
-    results = cursor.fetchall()
-
-    cursor.close()
-    connection.close()
-
-    return render_template('all-accounts.html', accounts=results)
-
+    query = """
+        SELECT s.first_name, s.last_name,  s.class, t.destination, t.year, t.semester
+        FROM student AS s
+           INNER JOIN student_trip AS st ON s.id = st.student_id 
+           INNER JOIN trip AS t ON st.trip_id = t.id
+        """
+    g.cursor.execute(query)
+    return g.cursor.fetchall()
