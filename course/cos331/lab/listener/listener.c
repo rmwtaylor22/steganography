@@ -26,20 +26,16 @@ int main(argc, argv)
     int enable = 1;
 
     // storing command line arguments
-    const char * hostVal = argv[0];
-    const char * portNum = argv[1];
+    const char * hostVal = argv[1];
+    const char * portNum = argv[2];
+    printf("DOCROOT: %s\n", hostVal);
+    printf("PORT NUM: %s\n", portNum);
 
     struct addrinfo hints;
     struct addrinfo * address_resource;
     struct sockaddr_storage remote_addr;
     // remote address size
     socklen_t remote_addr_s = sizeof(remote_addr);
-
-    if (argc != 2) {
-        // does this line need an error checker?
-        printf("usage: client hostname\n");
-        exit(1);
-    }
 
     memset(&hints, 0, sizeof(hints));
     hints.ai_family = AF_INET;  //ip version 4
