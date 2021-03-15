@@ -15,4 +15,10 @@ netdb.h
 -
 string.h
 -
+errno.h
+-
+unistd.h
+-
+stdlib.h
+-
 
