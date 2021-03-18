@@ -14,14 +14,34 @@
 
 void send_response(int accept_desc, char * request){
     char response_buffer[MAX_BUFFER_SIZE];
+    char request_msg[MAX_BUFFER_SIZE];
     memset(response_buffer, 0 , MAX_BUFFER_SIZE);
     unsigned long i;
     int bytes_sent;
 
+    char command[6], file[100], version[15], info[200];
+
+    // print contents of http request
+    // printf("HTTP REQ: %s\n", request);
+
     for (i=0; i<strlen(request); i++){
-        response_buffer[i] = (char) toupper(request[i]);
+        request_msg[i] = request[i];
+
+        // capitalizes it
+        // response_buffer[i] = (char) toupper(request[i]);
     }
-    response_buffer[i] = '\n';
+    request_msg[i] = '\n';
+
+    printf("HTTP REQ: %s\n", request_msg);
+
+    strcpy(info, request_msg);
+    sscanf(info, "%s %s %s", command, file, version);
+    printf("COMMAND: %s  FILE: %s  VERSION: %s\n", command, file, version);
+
+    FILE *fp;
+    fp = fopen(file, "r");
+    fprintf(fp, "This is testing for fprintf...\n");
+
 
     bytes_sent = send(accept_desc, response_buffer, strlen(response_buffer), 0);
     if (bytes_sent == -1){
@@ -57,6 +77,9 @@ void handle_connection(int accept_desc) {
 
             cursor = 0;
             memset(request_buffer, 0, MAX_BUFFER_SIZE);
+
+            // do I want this?
+            break;
 
         } else {
             if (cursor < MAX_BUFFER_SIZE){
@@ -96,7 +119,7 @@ int main(argc, argv)
 
 
     return_value = getaddrinfo(MYHOST, MYPORT, &hints, &address_resource);
-    //return_value = getaddrinfo(hostVal, portNum, &hints, &address_resource);
+    // return_value = getaddrinfo(hostVal, portNum, &hints, &address_resource);
     if (return_value != 0){
         printf("Error: %s (line: %d)\n", strerror(errno), __LINE__);
         return return_value;
