@@ -5,16 +5,66 @@
 #include <errno.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include <ctype.h>
 
 #define MYHOST "localhost"
 #define MYPORT "8080"
 #define MAX_CLIENT_BACKLOG 128
+#define MAX_BUFFER_SIZE 4096
+
+void send_response(int accept_desc, char * request){
+    char response_buffer[MAX_BUFFER_SIZE];
+    memset(response_buffer, 0 , MAX_BUFFER_SIZE);
+    unsigned long i;
+    int bytes_sent;
+
+    for (i=0; i<strlen(request); i++){
+        response_buffer[i] = (char) toupper(request[i]);
+    }
+    response_buffer[i] = '\n';
+
+    bytes_sent = send(accept_desc, response_buffer, strlen(response_buffer), 0);
+    if (bytes_sent == -1){
+        printf("Error: %s (line: %d)\n", strerror(errno), __LINE__);
+    }
+}
 
 void handle_connection(int accept_desc) {
     char c;
-    recv(accept_desc, &c, 1, 0);
-    printf("%c\n", c);
-    fflush(stdout);
+    int bytes_read;
+    int cursor = 0;
+    char request_buffer[MAX_BUFFER_SIZE];
+
+    memset(request_buffer, 0, MAX_BUFFER_SIZE);
+
+    while(1){
+        bytes_read = recv(accept_desc, &c, 1, 0);
+        if (bytes_read <= 0){
+            if (bytes_read == -1){
+                printf("Error: %s (line: %d)\n", strerror(errno), __LINE__);
+            }
+            break;
+        }
+
+        if (c == '\n') {
+            // send
+
+            send_response(accept_desc, request_buffer);
+
+            if (strlen(request_buffer) == 0){
+                return;
+            }
+
+            cursor = 0;
+            memset(request_buffer, 0, MAX_BUFFER_SIZE);
+
+        } else {
+            if (cursor < MAX_BUFFER_SIZE){
+                request_buffer[cursor] = c;
+                cursor++;
+            }
+        }
+    }
 }
 
 int main(argc, argv)
@@ -45,8 +95,8 @@ int main(argc, argv)
     hints.ai_flags = AI_PASSIVE;  // Listen on the socket
 
 
-    //return_value = getaddrinfo(MYHOST, MYPORT, &hints, &address_resource);
-    return_value = getaddrinfo(hostVal, portNum, &hints, &address_resource);
+    return_value = getaddrinfo(MYHOST, MYPORT, &hints, &address_resource);
+    //return_value = getaddrinfo(hostVal, portNum, &hints, &address_resource);
     if (return_value != 0){
         printf("Error: %s (line: %d)\n", strerror(errno), __LINE__);
         return return_value;
