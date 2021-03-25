@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+
+{% block title %}All Accounts{% endblock %}
+
+{% block content %}
+    <h1>Trip Report</h1>
+    <table class="table table-striped table-hover table-sm">
+        <thead>
+        <tr>
+            <th>Destination</th>
+            <th>Semester</th>
+            <th>Year</th>
+            <th>Student First Name</th>
+            <th>Student Last Name</th>
+            <th>Student Class</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for trip in accounts %}
+            <tr>
+                <td>{{ trip.destination }}</td>
+                <td>{{ trip.semester }}</td>
+                <td>{{ trip.year }}</td>
+                <td>{{ trip.first_name }}</td>
+                <td>{{ trip.last_name }}</td>
+                <td>{{ trip.class }}</td>
+            </tr>
+        {% else %}
+            <tr>
+                <td colspan="3">No Trips</td>
+            </tr>
+        {%  endfor %}
+        </tbody>
+    </table>
+{% endblock %}
