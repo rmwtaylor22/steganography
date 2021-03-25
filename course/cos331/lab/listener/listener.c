@@ -6,11 +6,14 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <ctype.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <time.h>
 
-#define MYHOST "localhost"
-#define MYPORT "8080"
+
 #define MAX_CLIENT_BACKLOG 128
 #define MAX_BUFFER_SIZE 4096
+#define IS_MULTIPROCESS 0
 
 void send_response(int accept_desc, char * request){
     char response_buffer[MAX_BUFFER_SIZE];
@@ -19,31 +22,112 @@ void send_response(int accept_desc, char * request){
     unsigned long i;
     int bytes_sent;
 
-    char command[6], file[100], version[15], info[200];
+    char command[6], file[100], version[15], info[200], buf[1074], path[1024];
 
-    // print contents of http request
-    // printf("HTTP REQ: %s\n", request);
 
     for (i=0; i<strlen(request); i++){
         request_msg[i] = request[i];
-
-        // capitalizes it
-        // response_buffer[i] = (char) toupper(request[i]);
     }
     request_msg[i] = '\n';
 
-    printf("HTTP REQ: %s\n", request_msg);
-
+    // divides up the incoming HTTP request into its command, file, and version
     strcpy(info, request_msg);
     sscanf(info, "%s %s %s", command, file, version);
     printf("COMMAND: %s  FILE: %s  VERSION: %s\n", command, file, version);
 
+    // concatenates the whole file path to the current, shorter file path
+    strcpy(path,"/home/CS/users/rwhite/.linux");
+    strcat(path,file);
+
+    // opens the file
     FILE *fp;
-    fp = fopen(file, "r");
-    fprintf(fp, "This is testing for fprintf...\n");
+    fp = fopen(path, "r");
+    if (fp == NULL) {
+        // file does not exist
+        printf("Error: %s (line: %d)\n", strerror(errno), __LINE__);
+    }
+
+/*
+    struct stat st;
+    stat(path, &st);
+    //size = st.st_size;
+
+*/
+
+    fseek(fp, 0, SEEK_END); // seek to end of file
+    long int sz = ftell(fp); // get current file pointer
+    fseek(fp, 0, SEEK_SET); // seek back to beginning of file
+    printf("the size: %ld \n", sz);
+
+    // get time and date
+    time_t the_time;
+    time(&the_time);
+    printf("Current time = %s", ctime(&the_time));
+
+    // get the file type
+    char *string,*found;
+    string = strdup(path);
+    int count = 0;
+
+    while( (found = strsep(&string,".")) != NULL && count <2){
+        count ++;
+    }
+
+    char *fileType;
+
+    if(strcmp(found, "html") != 0 || strcmp(found, "txt") != 0){
+        fileType = "text/html";
+        printf("The file type: %s\n", fileType);
+    } else {
+        if(strcmp(found, "txt") != 0){
+            fileType = "text/plain";
+        } else {
+            if(strcmp(found, "css") != 0){
+                fileType = "text/css";
+            } else {
+                if(strcmp(found, "js") != 0){
+                    fileType = "application/javascript";
+                } else {
+                    if(strcmp(found, "pdf") != 0){
+                        fileType = "application/pdf";
+                    } else {
+                        if(strcmp(found, "gif") != 0){
+                            fileType = "image/gif";
+                        } else {
+                            if(strcmp(found, "png") != 0){
+                                fileType = "image/png";
+                            } else {
+                                if(strcmp(found, "jpeg") != 0){
+                                    fileType = "image/jpeg";
+                                } else {
+                                    printf("Error: %s (line: %d)\n", strerror(errno), __LINE__);
+                                    fileType = "text/html";
+                                }
+                            }
+
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    printf("Now forming the response");
+
+    sprintf (buf, "HTTP/1.1 200 OK\r\n"
+                  "Date: %s""\r\n"
+                  "Content-Type: %s""\r\n"
+                  "Content-Length: %ld""\r\n"
+                  "Connection: keep-alive""\r\n"
+                  "\r\n"
+                  "%s", ctime(&the_time), fileType, sz, "Hello World!");
+
+    //response_buffer[i] = (char) toupper(request[i]);
+    //response_buffer[i] = (char) st.st_size;
+    //response_buffer[i] = '\n';
 
 
-    bytes_sent = send(accept_desc, response_buffer, strlen(response_buffer), 0);
+    bytes_sent = send(accept_desc, buf, strlen(response_buffer), 0);
     if (bytes_sent == -1){
         printf("Error: %s (line: %d)\n", strerror(errno), __LINE__);
     }
@@ -117,9 +201,7 @@ int main(argc, argv)
                         // SOCK_DGRAM: possibly unordered packets (e.g. UDP)
     hints.ai_flags = AI_PASSIVE;  // Listen on the socket
 
-
-    return_value = getaddrinfo(MYHOST, MYPORT, &hints, &address_resource);
-    // return_value = getaddrinfo(hostVal, portNum, &hints, &address_resource);
+    return_value = getaddrinfo(hostVal, portNum, &hints, &address_resource);
     if (return_value != 0){
         printf("Error: %s (line: %d)\n", strerror(errno), __LINE__);
         return return_value;
@@ -159,10 +241,37 @@ int main(argc, argv)
         return return_value;
     }
 
-    // code that is triggered when data comes in on the socket
-    accept_desc = accept(socket_desc, (struct sockaddr*) &remote_addr, &remote_addr_s);
-    handle_connection(accept_desc);
-    close(accept_desc);
+    // where handle connection is triggered
+    while(1){
+
+        accept_desc = accept(socket_desc, (struct sockaddr*) &remote_addr, &remote_addr_s);
+        #if IS_MULTIPROCESS == 1
+            // fork clones the process
+            // everything in the process gets duplicated to the second process
+            int pid = fork();
+            if (pid == 0) {
+                // child process starts ...
+                handle_connection(accept_desc);
+                close(accept_desc);
+                close(socket_desc);
+                exit(0);
+                // ... child process terminated
+            }
+
+            if (pid == -1) {
+                printf("Error: %s (line: %d)\n", strerror(errno), __LINE__);
+                return pid;
+            }
+            // the parent process
+            close(accept_desc);
+
+        #else
+            handle_connection(accept_desc);
+            close(accept_desc);
+            break;
+        #endif
+    }
+
     close(socket_desc);
 
 

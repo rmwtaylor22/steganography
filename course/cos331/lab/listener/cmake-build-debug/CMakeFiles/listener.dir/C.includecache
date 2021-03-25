@@ -23,4 +23,10 @@ stdlib.h
 -
 ctype.h
 -
+sys/types.h
+-
+sys/stat.h
+-
+time.h
+-
 
