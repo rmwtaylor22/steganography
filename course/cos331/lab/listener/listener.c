@@ -23,7 +23,7 @@ void send_response(int accept_desc, char * request){
     unsigned long i;
     int bytes_sent;
 
-    char command[6], file[100], version[15], info[200], path[1024];
+    char command[6], file[100], version[15], info[200], path[1024], readbuf[1024];
     char * buf[1074];
 
 
@@ -41,77 +41,38 @@ void send_response(int accept_desc, char * request){
     strcpy(path,"/home/CS/users/rwhite/.linux");
     strcat(path,file);
 
-    // opens the file
-    FILE *fp;
-    fp = fopen(path, "r");
-    if (fp == NULL) {
-        // file does not exist
-        printf("Error: %s (line: %d)\n", strerror(errno), __LINE__);
-    }
-
-    /*
-    char c;
-    int u = 0;
-    do
-    {
-        /* Read single character from file
-        c = fgetc(fp);
-
-        /* Print character read on console
-        file_buff[u] = (c);
-        u++;
-
-    } while(c != EOF);
-
-    fclose(fp);
-    */
-
-    // HEADERS:
-    // get length of file
-    fseek(fp, 0, SEEK_END); // seek to end of file
-    long int sz = ftell(fp); // get current file pointer
-    fseek(fp, 0, SEEK_SET); // seek back to beginning of file
-    printf("the size: %ld \n", sz);
-
-    // get time and date
-    time_t the_time;
-    time(&the_time);
-    printf("Current time = %s", ctime(&the_time));
 
     // get the file type
     char *string,*found;
     string = strdup(path);
     int count = 0;
-
-
     while( (found = strsep(&string,".")) != NULL && count <2){
         count ++;
     }
     char *fileType;
 
-    if(strcmp(found, "html") != 0 || strcmp(found, "txt") != 0){
+    if(strcmp(found, "html") == 0 || strcmp(found, "txt") == 0){
         fileType = "text/html";
-        printf("The file type: %s\n", fileType);
     } else {
-        if(strcmp(found, "txt") != 0){
+        if(strcmp(found, "txt") == 0){
             fileType = "text/plain";
         } else {
-            if(strcmp(found, "css") != 0){
+            if(strcmp(found, "css") == 0){
                 fileType = "text/css";
             } else {
-                if(strcmp(found, "js") != 0){
+                if(strcmp(found, "js") == 0){
                     fileType = "application/javascript";
                 } else {
-                    if(strcmp(found, "pdf") != 0){
+                    if(strcmp(found, "pdf") == 0){
                         fileType = "application/pdf";
                     } else {
-                        if(strcmp(found, "gif") != 0){
+                        if(strcmp(found, "gif") == 0){
                             fileType = "image/gif";
                         } else {
-                            if(strcmp(found, "png") != 0){
+                            if(strcmp(found, "png") == 0){
                                 fileType = "image/png";
                             } else {
-                                if(strcmp(found, "jpeg") != 0){
+                                if(strcmp(found, "jpeg") == 0){
                                     fileType = "image/jpeg";
                                 } else {
                                     printf("Error: %s (line: %d)\n", strerror(errno), __LINE__);
@@ -125,7 +86,36 @@ void send_response(int accept_desc, char * request){
         }
     }
 
-    sprintf ((char *) buf, "HTTP/1.1 200 OK\r\nDate: %sContent-Type: %s\r\nContent-Length: %ld\r\n\n%s", ctime(&the_time), fileType, sz, "Hello World!");
+    printf("The file type: %s\n", fileType);
+
+    // opens the file
+    FILE *fp;
+    fp = fopen(path, "rb");
+
+    if (fp == NULL) {
+        // file does not exist
+        printf("Error: %s (line: %d)\n", strerror(errno), __LINE__);
+    }
+
+    // read all the data from the file stream fp
+    fread(&readbuf, sizeof(char), 100000000, fp);
+    fclose(fp);
+    printf("Data read from file: %s \n", readbuf);
+
+
+    // HEADERS:
+    // get length of file
+    struct stat st;
+    stat(path, &st);
+    int sz = st.st_size;
+
+    // get time and date
+    time_t the_time;
+    time(&the_time);
+    printf("Current time = %s", ctime(&the_time));
+
+
+    sprintf ((char *) buf, "HTTP/1.1 200 OK\r\nDate: %sContent-Type: %s\r\nContent-Length: %d\r\n\n%s", ctime(&the_time), fileType, sz, readbuf);
 
     bytes_sent = send(accept_desc, buf, strlen((const char *) buf), 0);
     if (bytes_sent == -1){
