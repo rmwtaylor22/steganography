@@ -18,11 +18,13 @@
 void send_response(int accept_desc, char * request){
     char response_buffer[MAX_BUFFER_SIZE];
     char request_msg[MAX_BUFFER_SIZE];
+    char file_buff[MAX_BUFFER_SIZE];
     memset(response_buffer, 0 , MAX_BUFFER_SIZE);
     unsigned long i;
     int bytes_sent;
 
-    char command[6], file[100], version[15], info[200], buf[1074], path[1024];
+    char command[6], file[100], version[15], info[200], path[1024];
+    char * buf[1074];
 
 
     for (i=0; i<strlen(request); i++){
@@ -47,13 +49,25 @@ void send_response(int accept_desc, char * request){
         printf("Error: %s (line: %d)\n", strerror(errno), __LINE__);
     }
 
-/*
-    struct stat st;
-    stat(path, &st);
-    //size = st.st_size;
+    /*
+    char c;
+    int u = 0;
+    do
+    {
+        /* Read single character from file
+        c = fgetc(fp);
 
+        /* Print character read on console
+        file_buff[u] = (c);
+        u++;
+
+    } while(c != EOF);
+
+    fclose(fp);
 */
 
+    // HEADERS:
+    // get length of file
     fseek(fp, 0, SEEK_END); // seek to end of file
     long int sz = ftell(fp); // get current file pointer
     fseek(fp, 0, SEEK_SET); // seek back to beginning of file
@@ -72,7 +86,6 @@ void send_response(int accept_desc, char * request){
     while( (found = strsep(&string,".")) != NULL && count <2){
         count ++;
     }
-
     char *fileType;
 
     if(strcmp(found, "html") != 0 || strcmp(found, "txt") != 0){
@@ -104,7 +117,6 @@ void send_response(int accept_desc, char * request){
                                     fileType = "text/html";
                                 }
                             }
-
                         }
                     }
                 }
@@ -114,20 +126,11 @@ void send_response(int accept_desc, char * request){
 
     printf("Now forming the response");
 
-    sprintf (buf, "HTTP/1.1 200 OK\r\n"
-                  "Date: %s""\r\n"
-                  "Content-Type: %s""\r\n"
-                  "Content-Length: %ld""\r\n"
-                  "Connection: keep-alive""\r\n"
-                  "\r\n"
-                  "%s", ctime(&the_time), fileType, sz, "Hello World!");
-
-    //response_buffer[i] = (char) toupper(request[i]);
-    //response_buffer[i] = (char) st.st_size;
-    //response_buffer[i] = '\n';
+    //char * test_response = "HTTP/1.1 200 OK\r\nDate: Thu, 19 Feb 2009 12:27:04 GMT\r\nContent-Type: text/plain\r\nContent-Length: 11 \n\nhello world";
+    sprintf ((char *) buf, "HTTP/1.1 200 OK\r\nDate: %sContent-Type: %s\r\nContent-Length: %ld\r\n\n%s", ctime(&the_time), fileType, sz, "Hello World!");
 
 
-    bytes_sent = send(accept_desc, buf, strlen(response_buffer), 0);
+    bytes_sent = send(accept_desc, buf, strlen((const char *) buf), 0);
     if (bytes_sent == -1){
         printf("Error: %s (line: %d)\n", strerror(errno), __LINE__);
     }
