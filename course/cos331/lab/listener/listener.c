@@ -64,7 +64,7 @@ void send_response(int accept_desc, char * request){
     } while(c != EOF);
 
     fclose(fp);
-*/
+    */
 
     // HEADERS:
     // get length of file
@@ -82,6 +82,7 @@ void send_response(int accept_desc, char * request){
     char *string,*found;
     string = strdup(path);
     int count = 0;
+
 
     while( (found = strsep(&string,".")) != NULL && count <2){
         count ++;
@@ -124,11 +125,7 @@ void send_response(int accept_desc, char * request){
         }
     }
 
-    printf("Now forming the response");
-
-    //char * test_response = "HTTP/1.1 200 OK\r\nDate: Thu, 19 Feb 2009 12:27:04 GMT\r\nContent-Type: text/plain\r\nContent-Length: 11 \n\nhello world";
     sprintf ((char *) buf, "HTTP/1.1 200 OK\r\nDate: %sContent-Type: %s\r\nContent-Length: %ld\r\n\n%s", ctime(&the_time), fileType, sz, "Hello World!");
-
 
     bytes_sent = send(accept_desc, buf, strlen((const char *) buf), 0);
     if (bytes_sent == -1){
