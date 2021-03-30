@@ -23,7 +23,7 @@ void send_response(int accept_desc, char * request){
     unsigned long i;
     int bytes_sent;
 
-    char command[6], file[100], version[15], info[200], path[1024], readbuf[1024];
+    char command[6], file[100], version[15], info[200], path[1024], readbuf[100000000], placeholder[5];
     char * buf[1074];
 
 
@@ -97,26 +97,42 @@ void send_response(int accept_desc, char * request){
         printf("Error: %s (line: %d)\n", strerror(errno), __LINE__);
     }
 
-    // read all the data from the file stream fp
-    fread(&readbuf, sizeof(char), 100000000, fp);
-    fclose(fp);
-    printf("Data read from file: %s \n", readbuf);
-
-
     // HEADERS:
     // get length of file
     struct stat st;
     stat(path, &st);
+    printf("Did the stat command");
     int sz = st.st_size;
+    printf("File size = %d", sz);
 
     // get time and date
     time_t the_time;
     time(&the_time);
     printf("Current time = %s", ctime(&the_time));
 
+    // read all the data from the file stream fp
 
+    // if it's an image, read it character by character
+    if (strcmp(fileType,"image/gif") == 0 || strcmp(fileType,"image/png") == 0 || strcmp(fileType,"image/jpeg") == 0){
+        int c;
+        while(1) {
+            c = fgetc(fp);
+            if( feof(fp) ) {
+                break ;
+            }
+            printf("%c", c);
+            //sprintf ((char *) placeholder, "%c", c);
+            //strcat(readbuf,placeholder);
+        }
+        fclose(fp);
+
+    } else {  // its not an image
+        fread(&readbuf, sizeof(char), 100000000, fp);
+        fclose(fp);
+        printf("Data read from file: %s \n", readbuf);
+    }
+    // FORM HTTP RESPONSE
     sprintf ((char *) buf, "HTTP/1.1 200 OK\r\nDate: %sContent-Type: %s\r\nContent-Length: %d\r\n\n%s", ctime(&the_time), fileType, sz, readbuf);
-
     bytes_sent = send(accept_desc, buf, strlen((const char *) buf), 0);
     if (bytes_sent == -1){
         printf("Error: %s (line: %d)\n", strerror(errno), __LINE__);
