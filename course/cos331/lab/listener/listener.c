@@ -23,7 +23,7 @@ void send_response(int accept_desc, char * request){
     unsigned long i;
     int bytes_sent;
 
-    char command[6], file[100], version[15], info[200], path[1024], readbuf[100000000], placeholder[5];
+    char command[6], file[100], version[15], info[200], path[1024], readbuf[1024];
     char * buf[1074];
 
 
@@ -76,7 +76,6 @@ void send_response(int accept_desc, char * request){
                                     fileType = "image/jpeg";
                                 } else {
                                     printf("Error: %s (line: %d)\n", strerror(errno), __LINE__);
-                                    fileType = "text/html";
                                 }
                             }
                         }
@@ -121,21 +120,31 @@ void send_response(int accept_desc, char * request){
                 break ;
             }
             printf("%c", c);
-            //sprintf ((char *) placeholder, "%c", c);
-            //strcat(readbuf,placeholder);
         }
         fclose(fp);
+
+        printf("Data read from file: %c \n", c);
+
+        // FORM HTTP RESPONSE
+        sprintf ((char *) buf, "HTTP/1.1 200 OK\r\nDate: %sContent-Type: %s\r\nContent-Length: %d\r\n\n%c", ctime(&the_time), fileType, sz, c);
+
+        bytes_sent = send(accept_desc, buf, strlen((const char *) buf), 0);
+        if (bytes_sent == -1){
+            printf("Error: %s (line: %d)\n", strerror(errno), __LINE__);
+        }
 
     } else {  // its not an image
         fread(&readbuf, sizeof(char), 100000000, fp);
         fclose(fp);
         printf("Data read from file: %s \n", readbuf);
-    }
-    // FORM HTTP RESPONSE
-    sprintf ((char *) buf, "HTTP/1.1 200 OK\r\nDate: %sContent-Type: %s\r\nContent-Length: %d\r\n\n%s", ctime(&the_time), fileType, sz, readbuf);
-    bytes_sent = send(accept_desc, buf, strlen((const char *) buf), 0);
-    if (bytes_sent == -1){
-        printf("Error: %s (line: %d)\n", strerror(errno), __LINE__);
+
+        // FORM HTTP RESPONSE
+        sprintf ((char *) buf, "HTTP/1.1 200 OK\r\nDate: %sContent-Type: %s\r\nContent-Length: %d\r\n\n%s", ctime(&the_time), fileType, sz, readbuf);
+
+        bytes_sent = send(accept_desc, buf, strlen((const char *) buf), 0);
+        if (bytes_sent == -1){
+            printf("Error: %s (line: %d)\n", strerror(errno), __LINE__);
+        }
     }
 }
 
