@@ -98,7 +98,7 @@ void send_response(int accept_desc, char * request){
     }
 
     // read all the data from the file stream fp
-    fread(&readbuf, sizeof(char), 100000000, fp);
+    fread(&readbuf, sizeof(char), MAX_BUFFER_SIZE, fp);
     fclose(fp);
     printf("Data read from file: %s \n", readbuf);
 
