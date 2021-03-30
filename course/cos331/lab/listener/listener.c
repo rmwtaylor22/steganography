@@ -76,6 +76,7 @@ void send_response(int accept_desc, char * request){
                                     fileType = "image/jpeg";
                                 } else {
                                     printf("Error: %s (line: %d)\n", strerror(errno), __LINE__);
+                                    fileType = "image/jpeg";
                                 }
                             }
                         }
