@@ -23,7 +23,7 @@ void send_response(int accept_desc, char * request){
     unsigned long i;
     int bytes_sent;
 
-    char command[6], file[100], version[15], info[200], path[1024], readbuf[1024];
+    char command[6], file[100], version[15], info[200], path[1024], readbuf[1024], thedata[MAX_BUFFER_SIZE];
     char * buf[1074];
 
 
@@ -114,12 +114,16 @@ void send_response(int accept_desc, char * request){
     time(&the_time);
     printf("Current time = %s", ctime(&the_time));
 
-
-    sprintf ((char *) buf, "HTTP/1.1 200 OK\r\nDate: %sContent-Type: %s\r\nContent-Length: %d\r\n\n%s", ctime(&the_time), fileType, sz, readbuf);
-
-    bytes_sent = send(accept_desc, buf, strlen((const char *) buf), 0);
-    if (bytes_sent == -1){
-        printf("Error: %s (line: %d)\n", strerror(errno), __LINE__);
+    // read all the data from the file stream fp
+    // read one byte at a time
+    while(fread(&thedata,sizeof(thedata), 24, fp) > 0){
+        fread(readbuf, sizeof(char), 24, fp);
+        // process bytesRead worth of data in buffer
+        sprintf ((char *) buf, "HTTP/1.1 200 OK\r\nDate: %sContent-Type: %s\r\nExpires: Mon,11 Nov 2021 08:36:00 GMT\r\nContent-Length: %d\r\n\n%s", ctime(&the_time), fileType, sz, readbuf);
+        bytes_sent = send(accept_desc, buf, strlen((const char *) buf), 0);
+        if (bytes_sent == -1){
+            printf("Error: %s (line: %d)\n", strerror(errno), __LINE__);
+        }
     }
 }
 
