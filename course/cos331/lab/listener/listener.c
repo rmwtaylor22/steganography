@@ -13,7 +13,7 @@
 
 #define MAX_CLIENT_BACKLOG 128
 #define MAX_BUFFER_SIZE 4096
-#define IS_MULTIPROCESS 0
+//#define IS_MULTIPROCESS 0
 
 void send_response(int accept_desc, char * request){
     char response_buffer[MAX_BUFFER_SIZE];
