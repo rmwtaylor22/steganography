@@ -13,7 +13,7 @@
 
 #define MAX_CLIENT_BACKLOG 128
 #define MAX_BUFFER_SIZE 4096
-//#define IS_MULTIPROCESS 0
+#define IS_MULTIPROCESS 1
 
 void send_response(int accept_desc, char * request){
     char response_buffer[MAX_BUFFER_SIZE];
@@ -92,16 +92,15 @@ void send_response(int accept_desc, char * request){
     FILE *fp;
     fp = fopen(path, "rb");
 
+    char* isFound;
+
     if (fp == NULL) {
         // file does not exist
         printf("Error: %s (line: %d)\n", strerror(errno), __LINE__);
+        isFound = "404 Bad Request";
+    } else {
+        isFound = "200 OK";
     }
-
-    // read all the data from the file stream fp
-    fread(&readbuf, sizeof(char), MAX_BUFFER_SIZE, fp);
-    fclose(fp);
-    printf("Data read from file: %s \n", readbuf);
-
 
     // HEADERS:
     // get length of file
@@ -114,16 +113,20 @@ void send_response(int accept_desc, char * request){
     time(&the_time);
     printf("Current time = %s", ctime(&the_time));
 
+    sprintf ((char *) buf, "HTTP/1.1 %s\r\nDate: %sContent-Type: %s\r\nExpires: Mon,11 Nov 2021 08:36:00 GMT\r\nContent-Length: %d\r\n\n%s", isFound, ctime(&the_time), fileType, sz, readbuf);
+    send(accept_desc, buf, strlen((const char *) buf), 0);
+
     // read all the data from the file stream fp
     // read one byte at a time
-    while(fread(&thedata,sizeof(thedata), 24, fp) > 0){
-        fread(readbuf, sizeof(char), 24, fp);
-        // process bytesRead worth of data in buffer
-        sprintf ((char *) buf, "HTTP/1.1 200 OK\r\nDate: %sContent-Type: %s\r\nExpires: Mon,11 Nov 2021 08:36:00 GMT\r\nContent-Length: %d\r\n\n%s", ctime(&the_time), fileType, sz, readbuf);
-        bytes_sent = send(accept_desc, buf, strlen((const char *) buf), 0);
-        if (bytes_sent == -1){
-            printf("Error: %s (line: %d)\n", strerror(errno), __LINE__);
+    char c;
+    int bytes_read;
+
+    while(1){
+        bytes_read = fread(&c, 1, 1, fp);
+        if (bytes_read != 1){
+            break;
         }
+        send(accept_desc, &c, 1, 0);
     }
 }
 
