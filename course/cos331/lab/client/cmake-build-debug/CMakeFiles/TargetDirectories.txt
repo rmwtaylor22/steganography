@@ -1,0 +1,3 @@
+/home/CS/users/rwhite/.linux/CLionProjects/rwhite/course/cos331/lab/client/cmake-build-debug/CMakeFiles/rebuild_cache.dir
+/home/CS/users/rwhite/.linux/CLionProjects/rwhite/course/cos331/lab/client/cmake-build-debug/CMakeFiles/edit_cache.dir
+/home/CS/users/rwhite/.linux/CLionProjects/rwhite/course/cos331/lab/client/cmake-build-debug/CMakeFiles/client.dir

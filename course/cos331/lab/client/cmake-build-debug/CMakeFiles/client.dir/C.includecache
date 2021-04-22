@@ -1,0 +1,32 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/CS/users/rwhite/.linux/CLionProjects/rwhite/course/cos331/lab/client/main.c
+stdio.h
+-
+sys/socket.h
+-
+netdb.h
+-
+string.h
+-
+errno.h
+-
+unistd.h
+-
+stdlib.h
+-
+ctype.h
+-
+sys/types.h
+-
+sys/stat.h
+-
+time.h
+-
+
