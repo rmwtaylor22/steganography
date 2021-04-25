@@ -14,8 +14,11 @@
 #define MAX_CLIENT_BACKLOG 128
 #define MAX_BUFFER_SIZE 4096
 #define IS_MULTIPROCESS 1
+#define DOCROOT
 
-void send_response(int accept_desc, char * request){
+// char the_docroot[50];
+
+void send_response(int accept_desc, char * request, const char * docroot){
     char response_buffer[MAX_BUFFER_SIZE];
     char request_msg[MAX_BUFFER_SIZE];
     char file_buff[MAX_BUFFER_SIZE];
@@ -38,7 +41,7 @@ void send_response(int accept_desc, char * request){
     printf("COMMAND: %s  FILE: %s  VERSION: %s\n", command, file, version);
 
     // concatenates the whole file path to the current, shorter file path
-    strcpy(path,"/home/CS/users/rwhite/.linux");
+    strcpy(path, docroot);
     strcat(path,file);
 
 
@@ -130,7 +133,7 @@ void send_response(int accept_desc, char * request){
     }
 }
 
-void handle_connection(int accept_desc) {
+void handle_connection(int accept_desc, const char * docroot) {
     char c;
     int bytes_read;
     int cursor = 0;
@@ -150,7 +153,7 @@ void handle_connection(int accept_desc) {
         if (c == '\n') {
             // send
 
-            send_response(accept_desc, request_buffer);
+            send_response(accept_desc, request_buffer, docroot);
 
             if (strlen(request_buffer) == 0){
                 return;
@@ -181,9 +184,12 @@ int main(argc, argv)
 
     // storing command line arguments
     const char * hostVal = argv[1];
-    const char * portNum = argv[2];
-    printf("DOCROOT: %s\n", hostVal);
+    const char * docroot = argv[2];
+    const char * portNum = argv[3];
+    printf("HOST VAL: %s\n", hostVal);
+    printf("DOCROOT: %s\n", docroot);
     printf("PORT NUM: %s\n", portNum);
+    // the_docroot = docroot;
 
     struct addrinfo hints;
     struct addrinfo * address_resource;
@@ -248,7 +254,7 @@ int main(argc, argv)
             int pid = fork();
             if (pid == 0) {
                 // child process starts ...
-                handle_connection(accept_desc);
+                handle_connection(accept_desc, docroot);
                 close(accept_desc);
                 close(socket_desc);
                 exit(0);
