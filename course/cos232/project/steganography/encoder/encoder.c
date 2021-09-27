@@ -13,6 +13,9 @@ int main(argc, argv)
     const char *outputPath = argv[2];
     const char *secretMessage = argv[3];
 
+    const char *inputHolder = inputPath;
+    const char *outputHolder = outputPath;
+
     printf("Input: %s\n", inputPath);
     printf("Output: %s\n", outputPath);
     printf("Message: %s\n", secretMessage);
@@ -20,16 +23,17 @@ int main(argc, argv)
     int is_ok = EXIT_FAILURE;
 
     // open bitmap
-    FILE* fp = fopen(inputPath, "r");
+    FILE* fp = fopen(inputHolder, "r");
     if(!fp) {
         perror("The file didn't open");
         return is_ok;
     }
 
+
+
     // bitmap file header - 14 bits
     // DIB header - "BITMAPINFOHEADER" 40 bits
     // Bitmap starts at 54
-
     int n;
     int m;
     int d;
@@ -43,28 +47,48 @@ int main(argc, argv)
     printf("Width: %d\n", n);
     printf("Height: %d\n", m);
 
+
     // skip over the rest of the header
-    fread(&m, 28, 1, fp);
+    fread(&d, 28, 1, fp);
 
     // tell where the file pointer is positioned at
     long int p = ftell(fp);
     printf("Pixels start at: %ld\n", p);
 
+    // get total number of pixels
+    int totalPixels;
+    if (m < 0){
+        totalPixels = n*m*-1;
+    } else {
+        totalPixels = n*m;
+    }
+    printf("Total pixels: %d\n", totalPixels);
 
-    /*
-    int c;
-    char *string;
-    string = malloc(1);
-    while ((c = fgetc(fp)) != EOF) {
-        string[0] = (char)c;
-        fprintf(stdout,"%s\n", string);
+    int e;
+    // Loop that iterates over pixels
+    for (int i = 0; i < totalPixels; ++i) {
+        fread(&e, 4, 1, fp);
+        printf("Pixel: %d\n", e);
     }
 
-     */
 
+    // Loop that iterates over bytes in secret message
+    printf("The string length of the secret message: %lu\n", strlen(secretMessage));
+
+    unsigned long len = strlen(secretMessage);
+    for(int i=0; i < len; i++){
+        printf("Byte value: %d\n", secretMessage[i]);
+    }
+
+
+
+    // have a struct and read it into a struct for four bytes that it can access
+    // --> read in integer and then parse out four bytes/ bits? (Or one byte)
+    // change one bit on each byte
+    // If you read it in a an int, it will probably swap bytes because of endianess
 
     // open storage file
-    FILE* fp2 = fopen(outputPath, "w");
+    FILE* fp2 = fopen(outputHolder, "w");
     if(!fp2) {
         perror("The file didn't open");
         return is_ok;
