@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define MAX_BUFFER_SIZE 4096
+typedef unsigned char BYTE;
 
 int main(argc, argv)
         int     argc;
@@ -29,7 +29,12 @@ int main(argc, argv)
         return is_ok;
     }
 
-
+    struct PIXEL {
+        BYTE r;
+        BYTE g;
+        BYTE b;
+        BYTE a;
+    } pixel;
 
     // bitmap file header - 14 bits
     // DIB header - "BITMAPINFOHEADER" 40 bits
@@ -65,10 +70,35 @@ int main(argc, argv)
     printf("Total pixels: %d\n", totalPixels);
 
     int e;
+    int f;
+    int g;
+    int h;
+    int q=0;
     // Loop that iterates over pixels
     for (int i = 0; i < totalPixels; ++i) {
-        fread(&e, 4, 1, fp);
-        printf("Pixel: %d\n", e);
+        // fread(&e, 4, 1, fp);
+        // red
+        fread(&e, 1, 1, fp);
+        // green
+        fread(&f, 1, 1, fp);
+        // blue
+        fread(&g, 1, 1, fp);
+        // alpha
+        fread(&h, 1, 1, fp);
+        struct pixel nextPixel = {e,f,g,h};
+
+        if (q < strlen(secretMessage)){
+            nextPixel.r[0] = secretMessage[q];
+            q++;
+        } else break;
+        if (q < strlen(secretMessage)){
+            nextPixel.g[0] = secretMessage[q];
+            q++;
+        } else break;
+        if (q < strlen(secretMessage)){
+            nextPixel.b[0] = secretMessage[q];
+            q++;
+        } else break;
     }
 
 
@@ -85,7 +115,11 @@ int main(argc, argv)
     // have a struct and read it into a struct for four bytes that it can access
     // --> read in integer and then parse out four bytes/ bits? (Or one byte)
     // change one bit on each byte
-    // If you read it in a an int, it will probably swap bytes because of endianess
+    // If you read it in as an int, it will probably swap bytes because of endianess
+
+    // create a struct that sorts out the bits/ bytes
+    // one by one, go through the pixels and assign them to the struct, BUT fill in the last part of the struct with the secret message's bit
+    // write the struct to the file
 
     // open storage file
     FILE* fp2 = fopen(outputHolder, "w");
