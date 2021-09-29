@@ -2,19 +2,15 @@
 #include <stdlib.h>
 #include <string.h>
 
-typedef unsigned char BYTE;
-
 int main(argc, argv)
         int     argc;
         char    *argv[];{
 
     // storing command line arguments
     const char *inputPath = argv[1];
-    const char *outputPath = argv[2];
+    const char * outputPath = argv[2];
     const char *secretMessage = argv[3];
 
-    const char *inputHolder = inputPath;
-    const char *outputHolder = outputPath;
 
     printf("Input: %s\n", inputPath);
     printf("Output: %s\n", outputPath);
@@ -23,40 +19,45 @@ int main(argc, argv)
     int is_ok = EXIT_FAILURE;
 
     // open bitmap
-    FILE* fp = fopen(inputHolder, "r");
+    FILE* fp = fopen(inputPath, "r");
     if(!fp) {
         perror("The file didn't open");
         return is_ok;
     }
 
-    struct PIXEL {
-        BYTE r;
-        BYTE g;
-        BYTE b;
-        BYTE a;
-    } pixel;
+    // open storage file
+    FILE* fp2 = fopen(outputPath, "w");
+    if(!fp2) {
+        perror("The file didn't open");
+        return is_ok;
+    }
 
-    // bitmap file header - 14 bits
-    // DIB header - "BITMAPINFOHEADER" 40 bits
-    // Bitmap starts at 54
+    int b;
     int n;
     int m;
     int d;
     // skip over the header (14) and the size of the header bytes (4)
-    fseek(fp, 18, SEEK_SET);
-    // read the bitmap width in pixels (signed int)
-    fread(&n, 4, 1, fp);
-    // read the bitmap height in pixels (signed int)
-    fread(&m, 4, 1, fp);
+    // fseek(fp, 18, SEEK_SET);
+    fread(&b, 18, 1, fp);
+    fwrite(&b,18,1, fp2);
 
+    // read bitmap width in pixels
+    fread(&n, 4, 1, fp);
+    fwrite(&n,4,1, fp2);
+
+    // read bitmap height in pixels
+    fread(&m, 4, 1, fp);
+    fwrite(&m,4,1, fp2);
+
+    // print results
     printf("Width: %d\n", n);
     printf("Height: %d\n", m);
 
-
     // skip over the rest of the header
     fread(&d, 28, 1, fp);
+    fwrite(&d,28,1, fp2);
 
-    // tell where the file pointer is positioned at
+    // locate file pointer
     long int p = ftell(fp);
     printf("Pixels start at: %ld\n", p);
 
@@ -69,64 +70,79 @@ int main(argc, argv)
     }
     printf("Total pixels: %d\n", totalPixels);
 
+
+
+    // 'pixelByteCount' keeps track of all the pixel bytes we've been through
+    // Whenever pixelByteCount%4 = 0, it is an alpha byte and we skip it
+    int pixelByteCount = 0;
     int e;
-    int f;
-    int g;
-    int h;
-    int q=0;
-    // Loop that iterates over pixels
-    for (int i = 0; i < totalPixels; ++i) {
-        // fread(&e, 4, 1, fp);
-        // red
+    // loop through msg
+    for(int i=0; i < strlen(secretMessage); i++){
+        //printf("Byte value: %d\n", secretMessage[i]);
+
+        // msgByte: hold value of message byte
+        char msgByte = secretMessage[i];
+        // newByte will hold value of new byte
+        int newByte;
+
+        // loop through 8 bits in message byte
+        for(int counter=0; counter < 8; counter++){
+            // grab bit by masking msg byte
+            int msgBit = msgByte & 1;
+            // read next color byte & increase pixel byte count
+            fread(&e, 1, 1, fp);
+            pixelByteCount ++;
+
+            // if alpha byte, write it to file and read next byte
+            if (pixelByteCount%4 == 0) {
+                fwrite(&e, 1, 1, fp2);
+                fread(&e, 1, 1, fp);
+                pixelByteCount++;
+            }
+            // put message bit in color byte LSB & write it to the file
+            if (msgBit == 1) {
+                newByte = e | 1;
+                fwrite(&newByte, 1, 1, fp2);
+            } else {
+                newByte = e & 1;
+                fwrite(&newByte, 1, 1, fp2);
+            }
+            // shift the bits in secret message
+            msgByte = msgByte >> 1;
+        }
+    }
+
+    // put null byte in last 8 positions
+    int newByte;
+    for(int counter=0; counter < 8; counter++) {
+        // read next color byte
         fread(&e, 1, 1, fp);
-        // green
-        fread(&f, 1, 1, fp);
-        // blue
-        fread(&g, 1, 1, fp);
-        // alpha
-        fread(&h, 1, 1, fp);
-        struct pixel nextPixel = {e,f,g,h};
+        pixelByteCount++;
 
-        if (q < strlen(secretMessage)){
-            nextPixel.r[0] = secretMessage[q];
-            q++;
-        } else break;
-        if (q < strlen(secretMessage)){
-            nextPixel.g[0] = secretMessage[q];
-            q++;
-        } else break;
-        if (q < strlen(secretMessage)){
-            nextPixel.b[0] = secretMessage[q];
-            q++;
-        } else break;
+        // if alpha, write to file and skip
+        if (pixelByteCount%4 == 0) {
+            fwrite(&e, 1, 1, fp2);
+            fread(&e, 1, 1, fp);
+            pixelByteCount++;
+        }
+        // put 0 bit in color byte LSB & write it to the file
+        newByte = e & 1;
+        fwrite(&newByte, 1, 1, fp2);
     }
 
 
-    // Loop that iterates over bytes in secret message
-    printf("The string length of the secret message: %lu\n", strlen(secretMessage));
+    // attach the rest of the image onto the file
+    int r;
+    do {
+        fread(&r, 1, 1, fp);
+        fwrite(&r, 1, 1, fp2);
+    } while (getc(fp) != EOF);
 
-    unsigned long len = strlen(secretMessage);
-    for(int i=0; i < len; i++){
-        printf("Byte value: %d\n", secretMessage[i]);
-    }
+    // close file
+    fclose(fp);
 
 
-
-    // have a struct and read it into a struct for four bytes that it can access
-    // --> read in integer and then parse out four bytes/ bits? (Or one byte)
-    // change one bit on each byte
     // If you read it in as an int, it will probably swap bytes because of endianess
-
-    // create a struct that sorts out the bits/ bytes
-    // one by one, go through the pixels and assign them to the struct, BUT fill in the last part of the struct with the secret message's bit
-    // write the struct to the file
-
-    // open storage file
-    FILE* fp2 = fopen(outputHolder, "w");
-    if(!fp2) {
-        perror("The file didn't open");
-        return is_ok;
-    }
 
     return 0;
 }
