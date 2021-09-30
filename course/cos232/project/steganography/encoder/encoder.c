@@ -96,7 +96,7 @@ int main(argc, argv)
                 newByte = e | 1;
                 fwrite(&newByte, 1, 1, fp2);
             } else {
-                newByte = e & 1;
+                newByte = e & ~1;
                 fwrite(&newByte, 1, 1, fp2);
             }
             // shift the bits in secret message
