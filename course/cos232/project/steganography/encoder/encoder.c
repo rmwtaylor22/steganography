@@ -11,19 +11,20 @@ int main(argc, argv)
     const char * outputPath = argv[2];
     const char *secretMessage = argv[3];
 
-
     printf("Input: %s\n", inputPath);
     printf("Output: %s\n", outputPath);
     printf("Message: %s\n", secretMessage);
 
-    int is_ok = EXIT_FAILURE;
 
     // open bitmap
+    int is_ok = EXIT_FAILURE;
+
     FILE* fp = fopen(inputPath, "r");
     if(!fp) {
         perror("The file didn't open");
         return is_ok;
     }
+
 
     // open storage file
     FILE* fp2 = fopen(outputPath, "w");
@@ -32,20 +33,21 @@ int main(argc, argv)
         return is_ok;
     }
 
+
     int b;
     int n;
     int m;
     int d;
+
     // skip over the header (14) and the size of the header bytes (4)
-    // fseek(fp, 18, SEEK_SET);
     fread(&b, 18, 1, fp);
     fwrite(&b,18,1, fp2);
 
-    // read bitmap width in pixels
+    // read pixel width
     fread(&n, 4, 1, fp);
     fwrite(&n,4,1, fp2);
 
-    // read bitmap height in pixels
+    // read pixel height
     fread(&m, 4, 1, fp);
     fwrite(&m,4,1, fp2);
 
@@ -61,27 +63,17 @@ int main(argc, argv)
     long int p = ftell(fp);
     printf("Pixels start at: %ld\n", p);
 
-    // get total number of pixels
-    int totalPixels;
-    if (m < 0){
-        totalPixels = n*m*-1;
-    } else {
-        totalPixels = n*m;
-    }
-    printf("Total pixels: %d\n", totalPixels);
 
-
-
-    // 'pixelByteCount' keeps track of all the pixel bytes we've been through
-    // Whenever pixelByteCount%4 = 0, it is an alpha byte and we skip it
+    // If pixelByteCount%4 = 0, it's an alpha byte
     int pixelByteCount = 0;
     int e;
-    // loop through msg
+
+    // loop through secret msg
     for(int i=0; i < strlen(secretMessage); i++){
         //printf("Byte value: %d\n", secretMessage[i]);
 
-        // msgByte: hold value of message byte
-        char msgByte = secretMessage[i];
+        // msgByte = secret message byte
+        int msgByte = (unsigned char) secretMessage[i];
         // newByte will hold value of new byte
         int newByte;
 
@@ -111,6 +103,7 @@ int main(argc, argv)
             msgByte = msgByte >> 1;
         }
     }
+
 
     // put null byte in last 8 positions
     int newByte;
