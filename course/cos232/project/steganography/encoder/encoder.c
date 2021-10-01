@@ -19,7 +19,7 @@ int main(argc, argv)
     // open bitmap
     int is_ok = EXIT_FAILURE;
 
-    FILE* fp = fopen(inputPath, "r");
+    FILE* fp = fopen(inputPath, "rb");
     if(!fp) {
         perror("The file didn't open");
         return is_ok;
@@ -27,42 +27,66 @@ int main(argc, argv)
 
 
     // open storage file
-    FILE* fp2 = fopen(outputPath, "w");
+    FILE* fp2 = fopen(outputPath, "wb");
     if(!fp2) {
         perror("The file didn't open");
         return is_ok;
     }
 
+    int totalBytesRead = 0;
 
     int b;
-    int n;
-    int m;
-    int d;
+    char d;
+    // skip over beginning of file header (2)
+    fread(&b, 2, 1, fp);
+    fwrite(&b,2,1, fp2);
+    totalBytesRead = totalBytesRead + 2;
 
-    // skip over the header (14) and the size of the header bytes (4)
-    fread(&b, 18, 1, fp);
-    fwrite(&b,18,1, fp2);
+    // size of BMP file (4)
+    fread(&b, 4, 1, fp);
+    fwrite(&b,4,1, fp2);
+    int size = b;
+    printf("Size: %d\n", b);
+    totalBytesRead = totalBytesRead + 4;
 
-    // read pixel width
-    fread(&n, 4, 1, fp);
-    fwrite(&n,4,1, fp2);
+    // skip over more of file header (4)
+    fread(&b, 4, 1, fp);
+    fwrite(&b,4,1, fp2);
+    totalBytesRead = totalBytesRead + 4;
 
-    // read pixel height
-    fread(&m, 4, 1, fp);
-    fwrite(&m,4,1, fp2);
+    // find starting position of bitmap file (4)
+    fread(&b, 4, 1, fp);
+    fwrite(&b,4,1, fp2);
+    printf("Pixels start at: %d\n", b);
+    totalBytesRead = totalBytesRead + 4;
 
-    // print results
-    printf("Width: %d\n", n);
-    printf("Height: %d\n", m);
+
+    // and the size of the header bytes in DIB (4)
+    fread(&b, 4, 1, fp);
+    fwrite(&b,4,1, fp2);
+    totalBytesRead = totalBytesRead + 4;
+
+
+    // read pixel width (4)
+    fread(&b, 4, 1, fp);
+    fwrite(&b,4,1, fp2);
+    printf("Width: %d\n", b);
+    totalBytesRead = totalBytesRead + 4;
+
+
+    // read pixel height (4)
+    fread(&b, 4, 1, fp);
+    fwrite(&b,4,1, fp2);
+    printf("Height: %d\n", b);
+    totalBytesRead = totalBytesRead + 4;
+
 
     // skip over the rest of the header
-    fread(&d, 28, 1, fp);
-    fwrite(&d,28,1, fp2);
-
-    // locate file pointer
-    long int p = ftell(fp);
-    printf("Pixels start at: %ld\n", p);
-
+    for (int i = 0; i < 28; i ++){
+        fread(&d, 1, 1, fp);
+        fwrite(&d,1,1, fp2);
+        totalBytesRead ++;
+    }
 
     // If pixelByteCount%4 = 0, it's an alpha byte
     int pixelByteCount = 0;
@@ -88,6 +112,7 @@ int main(argc, argv)
             // if alpha byte, write it to file and read next byte
             if (pixelByteCount%4 == 0) {
                 fwrite(&e, 1, 1, fp2);
+                totalBytesRead++;
                 fread(&e, 1, 1, fp);
                 pixelByteCount++;
             }
@@ -95,14 +120,21 @@ int main(argc, argv)
             if (msgBit == 1) {
                 newByte = e | 1;
                 fwrite(&newByte, 1, 1, fp2);
+                totalBytesRead++;
             } else {
                 newByte = e & ~1;
                 fwrite(&newByte, 1, 1, fp2);
+                totalBytesRead++;
             }
             // shift the bits in secret message
             msgByte = msgByte >> 1;
         }
     }
+
+    /*
+    int nullB = 0x0;
+    fwrite(&nullB, 1, 1, fp2);
+     */
 
 
     // put null byte in last 8 positions
@@ -115,27 +147,26 @@ int main(argc, argv)
         // if alpha, write to file and skip
         if (pixelByteCount%4 == 0) {
             fwrite(&e, 1, 1, fp2);
+            totalBytesRead++;
             fread(&e, 1, 1, fp);
             pixelByteCount++;
         }
         // put 0 bit in color byte LSB & write it to the file
-        newByte = e & 1;
+        newByte = e & ~1;
         fwrite(&newByte, 1, 1, fp2);
+        totalBytesRead++;
     }
 
 
     // attach the rest of the image onto the file
-    int r;
-    do {
-        fread(&r, 1, 1, fp);
-        fwrite(&r, 1, 1, fp2);
-    } while (getc(fp) != EOF);
+    while(totalBytesRead < size){
+        fread(&d, 1, 1, fp);
+        fwrite(&d,1,1, fp2);
+        totalBytesRead++;
+    }
 
     // close file
     fclose(fp);
-
-
-    // If you read it in as an int, it will probably swap bytes because of endianess
 
     return 0;
 }
