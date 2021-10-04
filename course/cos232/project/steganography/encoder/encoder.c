@@ -131,12 +131,6 @@ int main(argc, argv)
         }
     }
 
-    /*
-    int nullB = 0x0;
-    fwrite(&nullB, 1, 1, fp2);
-     */
-
-
     // put null byte in last 8 positions
     int newByte;
     for(int counter=0; counter < 8; counter++) {
@@ -156,7 +150,6 @@ int main(argc, argv)
         fwrite(&newByte, 1, 1, fp2);
         totalBytesRead++;
     }
-
 
     // attach the rest of the image onto the file
     while(totalBytesRead < size){
